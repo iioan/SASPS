@@ -83,7 +83,7 @@ High-level review of the dual DocuStore implementations that compare **Active Re
 - **Performance:** k6 suites in `performance-tests/` with generated summaries (`run-all-tests.sh` / `analyze-results.js`). Scenarios cover smoke, load, stress, scalability (data/users), pagination, soak, and concurrent writes.
 - **Test runs here:** Repository+UoW domain/application/infrastructure tests **pass**. Active Record domain tests **failed** to start due to `Connection refused` on `127.0.0.1:5432` (database not running).
 
-## 7. Comparative Metrics (from the latest generated k6 comparison report in `performance-tests/reports`, timestamped 2026-01-03T19-48-10.md at time of writing)
+## 7. Comparative Metrics (from the latest checked-in k6 comparison report in `performance-tests/reports`, timestamped 2026-01-03T13-30-18.md)
 - **Smoke (baseline CRUD):** Avg 5.18 ms (AR) vs 4.95 ms (Repo); throughput 3.8 req/s; 0% errors (Repo slightly faster).
 - **Load, 50 users:** Avg 6.16 ms vs 6.45 ms; P95 19.49 ms vs 28.96 ms; throughput 2.65 vs 2.50 req/s. Error rate 0.80% (AR) vs 0.20% (Repo) — AR faster but less reliable.
 - **Stress, ramp to 200 users:** Avg 10.29 ms vs 8.42 ms; throughput 3.01 vs 3.69 req/s (Repo win). Error rate 0.91% (AR) vs 1.37% (Repo).
