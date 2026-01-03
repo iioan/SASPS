@@ -17,7 +17,10 @@ High-level review of the dual DocuStore implementations that compare **Active Re
 - **Versions:** `POST /api/versions`, `GET /api/versions/document/{docId}`, `PUT /api/versions/document/{docId}/set-current`, `GET /api/versions/document/{docId}/version/{n}/download`.
 - **Tagging:** `POST /api/tags`, `GET /api/tags`, `POST /api/tags/documents/{docId}/tags`, `DELETE /api/tags/documents/{docId}/tags/{tagId}`, `GET /api/tags/documents/{docId}/tags`, `GET /api/tags/{tagId}/documents`, `GET /api/tags/documents?tagIds=a,b`.
 - **Search:** `GET /api/search/documents` (filters, pagination, sorting), `POST /api/search/reindex`.
-- **REST design:** Resource-oriented URIs, HTTP verbs, and error semantics are consistent across both implementations. Document listing lacks built-in pagination, which may limit scalability. Controllers are expressed as minimal APIs; Repository+UoW keeps composition strictly in the host builder, whereas Active Record additionally boots service locators.
+- **REST design:**
+  - Resource-oriented URIs, HTTP verbs, and error semantics are consistent across both implementations.
+  - Document listing lacks built-in pagination, which may limit scalability compared to the search endpoint.
+  - Controllers are expressed as minimal APIs; Repository+UoW keeps composition strictly in the host builder, whereas Active Record additionally boots service locators.
 
 ## 3. Patterns in Use
 - **Common:** DTO mapping between API and domain, MediatR for request handling, FluentValidation validators on commands/queries, and a layered modular monolith layout per bounded context.
@@ -72,7 +75,7 @@ High-level review of the dual DocuStore implementations that compare **Active Re
 - Active Record’s service locator and static DbContext access introduce hidden dependencies and make unit testing difficult; persistence and domain rules are entwined.
 - Lack of pagination on document listing endpoints could impact performance at scale.
 - Event publication is not wrapped in a transaction in either variant; failures after DB writes could leave downstream modules inconsistent.
-- Package version warnings in Repository infrastructure (EF vs Npgsql rc) could become a maintenance hazard if left unresolved.
+- Package version warnings in Repository infrastructure (EF vs Npgsql RC) could become a maintenance hazard if left unresolved.
 
 ## 6. Testing Strategy
 - **Unit/Domain:** Repository+UoW has fast, isolated domain tests (e.g., `Document.Domain.Tests/Entities/DocumentEntityTests.cs`) and application handler tests with mocked repositories/events.
