@@ -104,3 +104,5 @@ High-level review of the dual DocuStore implementations that compare **Active Re
 - In the Active Record variant, consider replacing the service locator with DI, and isolate persistence from domain logic to improve test coverage.
 - Add pagination/filtering to `GET /api/documents` to align with existing search and pagination tests.
 - Wrap event publication with transaction boundaries (or outbox) in both variants to avoid inconsistent downstream states after DB writes.
+
+**Bottom line:** both implementations serve the same API surface, but Repository + UoW better supports change velocity, testing, and transactional clarity, while Active Record trades those qualities for a simpler mental model and marginal latency wins in select scenarios. Choose based on whether your priority is speed of initial delivery (Active Record) or long-term maintainability and correctness (Repository + UoW).
