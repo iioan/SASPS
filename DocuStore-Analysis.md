@@ -13,10 +13,29 @@ High-level review of the dual DocuStore implementations that compare **Active Re
   - **Infrastructure:** EF Core DbContexts, migrations, and per-module wiring. Repository+UoW registers repositories + units of work; Active Record mostly wires DbContexts and initializes service locators in `DocuStore.Gateway/Program.cs`.
 
 ## 2. Endpoints & API Design
-- **Documents:** `POST /api/documents`, `GET /api/documents`, `GET /api/documents/{id}`, `PUT /api/documents/{id}`, `DELETE /api/documents/{id}`, `GET /api/documents/{id}/download`.
-- **Versions:** `POST /api/versions`, `GET /api/versions/document/{docId}`, `PUT /api/versions/document/{docId}/set-current`, `GET /api/versions/document/{docId}/version/{n}/download`.
-- **Tagging:** `POST /api/tags`, `GET /api/tags`, `POST /api/tags/documents/{docId}/tags`, `DELETE /api/tags/documents/{docId}/tags/{tagId}`, `GET /api/tags/documents/{docId}/tags`, `GET /api/tags/{tagId}/documents`, `GET /api/tags/documents?tagIds=a,b`.
-- **Search:** `GET /api/search/documents` (filters, pagination, sorting), `POST /api/search/reindex`.
+- **Documents (we manage document CRUD/download):**
+  - `POST /api/documents` – create a document with metadata + uploaded file.
+  - `GET /api/documents` – list all documents (no pagination today).
+  - `GET /api/documents/{id}` – fetch one document’s metadata.
+  - `PUT /api/documents/{id}` – update title/description.
+  - `DELETE /api/documents/{id}` – soft-delete a document.
+  - `GET /api/documents/{id}/download` – download the current version’s file.
+- **Versions (we track and promote document versions):**
+  - `POST /api/versions` – add a new version for a document.
+  - `GET /api/versions/document/{docId}` – list version history for a document.
+  - `PUT /api/versions/document/{docId}/set-current` – promote a version to current.
+  - `GET /api/versions/document/{docId}/version/{n}/download` – download a specific version.
+- **Tagging (we organize documents with tags):**
+  - `POST /api/tags` – create a tag.
+  - `GET /api/tags` – list tags (optionally with document counts).
+  - `POST /api/tags/documents/{docId}/tags` – add a tag to a document.
+  - `DELETE /api/tags/documents/{docId}/tags/{tagId}` – remove a tag from a document.
+  - `GET /api/tags/documents/{docId}/tags` – list tags on a document.
+  - `GET /api/tags/{tagId}/documents` – list documents with a single tag.
+  - `GET /api/tags/documents?tagIds=a,b` – list documents that have all specified tags.
+- **Search (we provide indexed search over documents):**
+  - `GET /api/search/documents` – keyword/date/creator search with pagination and sorting.
+  - `POST /api/search/reindex` – rebuild the search index across documents.
 - **REST design:**
   - Resource-oriented URIs, HTTP verbs, and error semantics are consistent across both implementations.
   - Document listing lacks built-in pagination, which may limit scalability compared to the search endpoint.
