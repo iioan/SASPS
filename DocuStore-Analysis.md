@@ -1,4 +1,4 @@
-# DocuStore Architectural Comparison
+# DocuStore Document Management Architectural Comparison
 
 High-level review of the dual DocuStore implementations that compare **Active Record** with **Repository + Unit of Work**. Both target document CRUD, versioning, tagging, and search on .NET 10 + PostgreSQL behind minimal APIs and a Docker Compose setup.
 
@@ -10,7 +10,7 @@ High-level review of the dual DocuStore implementations that compare **Active Re
   - **Domain:** 
     - *Active Record:* Entities inherit `ActiveRecordBase`, hold persistence logic, and pull dependencies via a static `ServiceLocator` (`Document.Domain/Entities/DocumentEntity.cs`).
     - *Repository+UoW:* Domain entities are persistence-ignorant POCOs; persistence contracts live in `Document.Application/Interfaces`.
-  - **Infrastructure:** EF Core DbContexts, migrations, and per-module wiring. Repository+UoW registers repositories + units of work; Active Record mostly wires DbContexts and initializes service locators (`DocuStore.Gateway/Program.cs` lines 13-23).
+  - **Infrastructure:** EF Core DbContexts, migrations, and per-module wiring. Repository+UoW registers repositories + units of work; Active Record mostly wires DbContexts and initializes service locators in `DocuStore.Gateway/Program.cs`.
 
 ## 2. Endpoints & API Design
 - **Documents:** `POST /api/documents`, `GET /api/documents`, `GET /api/documents/{id}`, `PUT /api/documents/{id}`, `DELETE /api/documents/{id}`, `GET /api/documents/{id}/download`.
@@ -59,7 +59,7 @@ High-level review of the dual DocuStore implementations that compare **Active Re
   - Static `ServiceLocator` + `DocumentDbContextProvider` in domain code tightly couple business logic to EF and global state, hindering testability and dependency tracing.
   - Domain methods intermix persistence, orchestration, and validation; events are published outside an explicit transaction boundary.
   - Queries like `All/Where/Count` run directly from entities, encouraging logic spread across the domain instead of through application services/repositories.
-  - Tests require a live PostgreSQL instance; failures occur when Docker DB is unavailable (see test run notes below).
+  - Tests require a live PostgreSQL instance; failures occur when Docker DB is unavailable (see §6 Testing Strategy).
 - **Repository + UoW:**
   - Extra abstraction adds boilerplate and learning overhead.
   - UnitOfWork exposes transaction methods, but most handlers only call `SaveChangesAsync`, so cross-aggregate workflows may still lack explicit transactional coordination.
@@ -75,7 +75,7 @@ High-level review of the dual DocuStore implementations that compare **Active Re
 - Active Record’s service locator and static DbContext access introduce hidden dependencies and make unit testing difficult; persistence and domain rules are entwined.
 - Lack of pagination on document listing endpoints could impact performance at scale.
 - Event publication is not wrapped in a transaction in either variant; failures after DB writes could leave downstream modules inconsistent.
-- Package version warnings in Repository infrastructure (EF vs Npgsql RC) could become a maintenance hazard if left unresolved.
+- Package version warnings in Repository infrastructure (EF vs Npgsql release candidate (RC)) could become a maintenance hazard if left unresolved.
 
 ## 6. Testing Strategy
 - **Unit/Domain:** Repository+UoW has fast, isolated domain tests (e.g., `Document.Domain.Tests/Entities/DocumentEntityTests.cs`) and application handler tests with mocked repositories/events.
@@ -83,7 +83,7 @@ High-level review of the dual DocuStore implementations that compare **Active Re
 - **Performance:** k6 suites in `performance-tests/` with generated summaries (`run-all-tests.sh` / `analyze-results.js`). Scenarios cover smoke, load, stress, scalability (data/users), pagination, soak, and concurrent writes.
 - **Test runs here:** Repository+UoW domain/application/infrastructure tests **pass**. Active Record domain tests **failed** to start due to `Connection refused` on `127.0.0.1:5432` (database not running).
 
-## 7. Comparative Metrics (from `performance-tests/reports/comparison-report-2026-01-03T19-48-10.md`)
+## 7. Comparative Metrics (from the latest generated k6 comparison report in `performance-tests/reports`, timestamped 2026-01-03T19-48-10.md at time of writing)
 - **Smoke (baseline CRUD):** Avg 5.18 ms (AR) vs 4.95 ms (Repo); throughput 3.8 req/s; 0% errors (Repo slightly faster).
 - **Load, 50 users:** Avg 6.16 ms vs 6.45 ms; P95 19.49 ms vs 28.96 ms; throughput 2.65 vs 2.50 req/s. Error rate 0.80% (AR) vs 0.20% (Repo) — AR faster but less reliable.
 - **Stress, ramp to 200 users:** Avg 10.29 ms vs 8.42 ms; throughput 3.01 vs 3.69 req/s (Repo win). Error rate 0.91% (AR) vs 1.37% (Repo).
